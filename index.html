@@ -2,47 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>My Digital Journal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Connection</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #fdfaf0; }
-        .container { max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: 10px; }
-        input, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-        button { padding: 10px; background: #24b47e; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f7f6; display: flex; justify-content: center; padding-top: 50px; }
+        .box { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; }
+        h2 { color: #333; margin-bottom: 20px; font-size: 1.2rem; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; background: #3ecf8e; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        button:hover { background: #34b27b; }
+        #status { margin-top: 15px; font-size: 0.9rem; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <h2>New Journal Entry</h2>
-        <input type="text" id="title" placeholder="Enter Title...">
-        <textarea id="content" rows="5" placeholder="Write your thoughts..."></textarea>
-        <button onclick="saveToSupabase()">Save to Supabase</button>
+    <div class="box">
+        <h2>Submit to Database</h2>
+        <input type="text" id="dataInput" placeholder="Type something...">
+        <button onclick="uploadData()">Send Data</button>
+        <p id="status"></p>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <script>
-        // PASTE YOUR ACTUAL DETAILS BELOW
-        const _url = 'https://wzguogbwmzzmjgtriape.supabase.co';
-        const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6Z3VvZ2J3bXp6bWpndHJpYXBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjAxNDEsImV4cCI6MjA5MTg5NjE0MX0.Q9nWnfi23es-YU7d4YSFNTuIluhtl_RA-BTSH8BGXPw';
+        // 2. PASTE YOUR CREDENTIALS HERE
+        const SUPABASE_URL = 'https://wzguogbwmzzmjgtriape.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6Z3VvZ2J3bXp6bWpndHJpYXBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjAxNDEsImV4cCI6MjA5MTg5NjE0MX0.Q9nWnfi23es-YU7d4YSFNTuIluhtl_RA-BTSH8BGXPw';
 
-        const supabaseClient = supabase.createClient(_url, _key);
+        // Initialize the client
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        async function saveToSupabase() {
-            const title = document.getElementById('title').value;
-            const content = document.getElementById('content').value;
+        async function uploadData() {
+            const inputVal = document.getElementById('dataInput').value;
+            const status = document.getElementById('status');
 
-            const { data, error } = await supabaseClient
-                .from('entries') // This must match your SQL table name
-                .insert([{ title: title, content: content }]);
+            if (!inputVal) {
+                status.innerText = "Please enter data!";
+                status.style.color = "orange";
+                return;
+            }
+
+            status.innerText = "Processing...";
+            status.style.color = "blue";
+
+            // 3. CHANGE 'your_table_name' and 'column_name' to match your Supabase Table
+            const { error } = await supabaseClient
+                .from('entries') 
+                .insert([{ column_name: id }]);
 
             if (error) {
-                alert('Error: ' + error.message);
+                status.innerText = "Error: " + error.message;
+                status.style.color = "red";
                 console.error(error);
             } else {
-                alert('Saved successfully!');
-                document.getElementById('title').value = '';
-                document.getElementById('content').value = '';
+                status.innerText = "Success! Saved to Supabase.";
+                status.style.color = "green";
+                document.getElementById('dataInput').value = ""; // Clear input
             }
         }
     </script>
