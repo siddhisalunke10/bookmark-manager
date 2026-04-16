@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Folia — Smart Bookmark Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#F8FAFC;
+  --bg2:#FFFFFF;
+  --bg3:#EEF4FF;
+  --bg4:#E0ECFF;
+
+  --txt:#0F172A;
+  --txt2:#475569;
+  --txt3:#94A3B8;
+
+  --accent:#2563EB;
+  --accent-h:#1D4ED8;
+  --accent-l:#DBEAFE;
+  --accent-l2:#BFDBFE;
+
+  --warm:#F97316;
+  --warm-l:#FFF1E6;
+
+  --border:#E2E8F0;
+  --border2:#CBD5E1;
+
+  --card:#FFFFFF;
+  --sidebar:#0F172A;
+  --sidebar2:#1E293B;
+
+  --st:#CBD5F5;
+  --st2:#94A3B8;
+  --st3:#64748B;
+
+  --shadow:0 2px 6px rgba(0,0,0,.06),0 4px 14px rgba(37,99,235,.08);
+  --shadow2:0 6px 24px rgba(37,99,235,.12);
+
+  --r:12px;--r2:18px;--r3:24px;
+  --fmain:'DM Sans',sans-serif;
+  --fhead:'Lora',serif;
+}
+[data-dark]{
+  --bg:#111915;--bg2:#172019;--bg3:#0E1510;--bg4:#1C2920;
+  --txt:#E6EDE8;--txt2:#8FA898;--txt3:#526658;
+  --border:#243029;--border2:#2E4038;
+  --card:#172019;--accent-l:#0F2E1A;--accent-l2:#153D24;
+  --warm-l:#2A1A14;
+  --shadow:0 1px 4px rgba(0,0,0,.3),0 2px 12px rgba(0,0,0,.25);
+  --shadow2:0 4px 20px rgba(0,0,0,.4);
+}
+body{font-family:var(--fmain);background:var(--bg);color:var(--txt);height:100vh;overflow:hidden;transition:background .25s,color .25s}
+#wrap{display:flex;height:100vh;overflow:hidden}
+
+/* SIDEBAR */
+#sb{width:252px;min-width:252px;background:var(--sidebar);display:flex;flex-direction:column;transition:width .28s cubic-bezier(.4,0,.2,1),min-width .28s cubic-bezier(.4,0,.2,1);overflow:hidden;position:relative;z-index:20}
+#sb.closed{width:0;min-width:0}
+.sb-logo{padding:22px 20px 18px;display:flex;align-items:center;gap:11px;border-bottom:1px solid rgba(255,255,255,.06)}
+.sb-logomark{width:34px;height:34px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-logomark svg{width:18px;height:18px}
+.sb-logotxt{font-family:var(--fhead);font-size:19px;font-weight:600;color:#fff;letter-spacing:-.3px;white-space:nowrap}
+.sb-logosub{font-size:10px;color:var(--st2);font-weight:400;white-space:nowrap;letter-spacing:.4px;text-transform:uppercase}
+.sb-nav{flex:1;overflow-y:auto;padding:10px 10px 6px;scrollbar-width:none}
+.sb-nav::-webkit-scrollbar{display:none}
+.sb-sec{padding:14px 10px 5px;font-size:10px;font-weight:600;color:var(--st3);letter-spacing:1px;text-transform:uppercase;white-space:nowrap}
+.ni{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;cursor:pointer;color:var(--st2);font-size:13.5px;font-weight:400;transition:background .15s,color .15s;margin-bottom:1px;white-space:nowrap;user-select:none}
+.ni:hover{background:rgba(255,255,255,.06);color:var(--st)}
+.ni.on{background:rgba(45,106,79,.45);color:#fff}
+.ni svg{width:15px;height:15px;flex-shrink:0;opacity:.75}
+.ni.on svg{opacity:1}
+.ni-cnt{margin-left:auto;background:rgba(255,255,255,.1);color:var(--st2);font-size:10.5px;padding:1px 7px;border-radius:20px;min-width:20px;text-align:center}
+.ni.on .ni-cnt{background:rgba(45,106,79,.6);color:#B7E4C7}
+.sb-foot{padding:10px;border-top:1px solid rgba(255,255,255,.06)}
+.ni-logout{color:#E07B5F !important}
+.ni-logout:hover{background:rgba(231,111,81,.12) !important;color:#E76F51 !important}
+
+/* TOGGLE BUTTON */
+#tog{position:fixed;top:18px;left:258px;z-index:30;background:var(--card);border:1px solid var(--border);border-radius:8px;width:30px;height:30px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt2);box-shadow:var(--shadow);transition:left .28s cubic-bezier(.4,0,.2,1)}
+#tog.sh{left:8px}
+#tog svg{width:14px;height:14px}
+
+/* MAIN AREA */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{display:flex;align-items:center;gap:12px;padding:13px 24px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.tb-title{font-family:var(--fhead);font-size:17px;font-weight:600;color:var(--txt);min-width:110px}
+.srch{flex:1;max-width:360px;position:relative}
+.srch input{width:100%;padding:8px 14px 8px 34px;border:1px solid var(--border2);border-radius:9px;font-family:var(--fmain);font-size:13.5px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s}
+.srch input:focus{border-color:var(--accent)}
+.srch-ic{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--txt3);pointer-events:none}
+.srch-ic svg{width:14px;height:14px}
+.tb-actions{display:flex;gap:8px;margin-left:auto;align-items:center}
+.ib{background:var(--bg);border:1px solid var(--border2);border-radius:8px;width:34px;height:34px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt2);transition:background .15s,color .15s;flex-shrink:0}
+.ib:hover{background:var(--bg3);color:var(--txt)}
+.ib svg{width:15px;height:15px}
+
+/* CONTENT AREA */
+#ct{flex:1;overflow-y:auto;padding:24px;scrollbar-width:thin;scrollbar-color:var(--border2) transparent}
+
+/* ADD BOOKMARK CARD */
+.add-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);padding:28px 28px 24px;box-shadow:var(--shadow);margin-bottom:24px}
+.add-ht{font-family:var(--fhead);font-size:20px;font-weight:600;color:var(--txt);margin-bottom:4px}
+.add-hs{font-size:13px;color:var(--txt3);margin-bottom:20px}
+.url-row{display:flex;gap:10px;margin-bottom:14px}
+.url-inp{flex:1;padding:12px 15px;border:1.5px solid var(--border2);border-radius:11px;font-family:var(--fmain);font-size:14px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s,box-shadow .15s}
+.url-inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+.btn-save{padding:12px 22px;background:var(--accent);color:#fff;border:none;border-radius:11px;font-family:var(--fmain);font-size:14px;font-weight:500;cursor:pointer;transition:background .15s,transform .1s;white-space:nowrap;flex-shrink:0}
+.btn-save:hover{background:var(--accent-h)}
+.btn-save:active{transform:scale(.98)}
+.btn-save:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.form-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}
+.fl{display:flex;flex-direction:column;gap:5px}
+.fl label{font-size:10.5px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px}
+.fl select,.fl input,.fl textarea{padding:9px 11px;border:1px solid var(--border2);border-radius:9px;font-family:var(--fmain);font-size:13px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s;resize:none}
+.fl select:focus,.fl input:focus,.fl textarea:focus{border-color:var(--accent)}
+
+/* META PREVIEW */
+.meta-prev{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;gap:14px;align-items:flex-start;animation:fadein .2s}
+.meta-fav{width:40px;height:40px;border-radius:8px;background:var(--accent-l);display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden}
+.meta-fav img{width:28px;height:28px;border-radius:4px}
+.meta-body h4{font-size:14px;font-weight:500;color:var(--txt);margin-bottom:3px;line-height:1.35}
+.meta-body p{font-size:12px;color:var(--txt2);line-height:1.4}
+.meta-url{font-size:11px;color:var(--txt3);margin-top:3px;word-break:break-all}
+.meta-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ai-tag{font-size:11px;padding:3px 9px;background:var(--accent-l);color:var(--accent);border-radius:20px;font-weight:500;border:1px solid var(--accent-l2)}
+.ai-badge{font-size:10px;padding:2px 8px;background:var(--accent-l2);color:var(--accent-h);border-radius:20px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+
+/* LOADING DOTS */
+.dots{display:inline-flex;gap:4px;align-items:center}
+.dots span{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:dot .7s ease-in-out infinite}
+.dots span:nth-child(2){animation-delay:.15s}
+.dots span:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,80%,100%{transform:scale(.5);opacity:.3}40%{transform:scale(1);opacity:1}}
+@keyframes fadein{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+@keyframes slidein{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:18px 20px;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px}
+.sc-num{font-family:var(--fhead);font-size:26px;font-weight:600;color:var(--accent);line-height:1}
+.sc-lbl{font-size:12px;color:var(--txt2)}
+.sc-icon{width:32px;height:32px;border-radius:9px;background:var(--accent-l);display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.sc-icon svg{width:15px;height:15px;color:var(--accent)}
+
+/* SECTION HEADER */
+.sh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.sh h2{font-family:var(--fhead);font-size:16px;font-weight:600;flex:1}
+.vt{display:flex;gap:2px;background:var(--bg3);border-radius:7px;padding:2px}
+.vb{background:transparent;border:none;padding:5px 7px;border-radius:5px;cursor:pointer;color:var(--txt3);transition:.12s;display:flex;align-items:center}
+.vb svg{width:13px;height:13px}
+.vb.on{background:var(--card);color:var(--txt);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.filter-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:18px;align-items:center}
+.filter-lbl{font-size:11px;color:var(--txt3);font-weight:500}
+.fpill{font-size:12px;padding:5px 13px;border-radius:20px;border:1px solid var(--border2);background:var(--bg2);color:var(--txt2);cursor:pointer;transition:.15s;white-space:nowrap}
+.fpill:hover{border-color:var(--accent);color:var(--accent)}
+.fpill.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.sort-sel{font-size:12px;padding:5px 10px;border:1px solid var(--border2);border-radius:20px;background:var(--bg2);color:var(--txt2);cursor:pointer;outline:none;font-family:var(--fmain);margin-left:auto}
+
+/* GRID / LIST LAYOUTS */
+.bm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.bm-list{display:flex;flex-direction:column;gap:8px}
+
+/* BOOKMARK CARD (GRID) */
+.bmc{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);overflow:hidden;box-shadow:var(--shadow);transition:box-shadow .18s,transform .18s,border-color .18s;cursor:pointer;position:relative;animation:fadein .2s}
+.bmc:hover{box-shadow:var(--shadow2);transform:translateY(-2px);border-color:var(--border2)}
+.bmc-thumb{width:100%;height:130px;display:flex;align-items:center;justify-content:center;background:var(--bg3);position:relative;overflow:hidden}
+.bmc-thumb-inner{display:flex;flex-direction:column;align-items:center;gap:8px}
+.bmc-thumb img.fav{width:36px;height:36px;border-radius:8px}
+.bmc-domain-chip{font-size:10.5px;color:var(--txt3);background:var(--bg2);padding:3px 10px;border-radius:20px;border:1px solid var(--border)}
+.bmc-body{padding:13px 14px 12px}
+.bmc-meta{font-size:11px;color:var(--txt3);margin-bottom:4px;display:flex;align-items:center;gap:5px}
+.bmc-meta img{width:12px;height:12px;border-radius:2px}
+.bmc-title{font-size:13.5px;font-weight:500;color:var(--txt);line-height:1.35;margin-bottom:6px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.bmc-note{font-size:12px;color:var(--txt2);margin-bottom:9px;font-style:italic;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4}
+.bmc-foot{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.tag{font-size:10.5px;padding:2px 8px;background:var(--accent-l);color:var(--accent);border-radius:20px;font-weight:500}
+.bmc-date{font-size:11px;color:var(--txt3);margin-left:auto}
+.broken-b{font-size:10px;padding:2px 7px;background:#FCEBEB;color:#A32D2D;border-radius:20px;font-weight:600;border:1px solid #F7C1C1}
+.bmc-acts{position:absolute;top:8px;right:8px;display:flex;gap:5px;opacity:0;transition:opacity .15s}
+.bmc:hover .bmc-acts{opacity:1}
+.ab{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.92);border:1px solid var(--border);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--txt2);transition:.12s}
+.ab:hover{background:#fff;color:var(--txt)}
+.ab.danger:hover{color:#A32D2D}
+.ab svg{width:12px;height:12px}
+
+/* BOOKMARK CARD (LIST) */
+.bml{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:13px 16px;display:flex;gap:13px;align-items:flex-start;box-shadow:var(--shadow);transition:box-shadow .18s,border-color .18s;cursor:pointer;position:relative;animation:fadein .2s}
+.bml:hover{box-shadow:var(--shadow2);border-color:var(--border2)}
+.bml-ico{width:46px;height:36px;border-radius:8px;background:var(--bg3);flex-shrink:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.bml-ico img{width:24px;height:24px;border-radius:4px}
+.bml-body{flex:1;min-width:0}
+.bml .bmc-acts{opacity:0}
+.bml:hover .bmc-acts{opacity:1}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:60px 24px}
+.empty-art{margin:0 auto 20px;width:72px;height:72px;background:var(--bg3);border-radius:50%;display:flex;align-items:center;justify-content:center;color:var(--txt3)}
+.empty-art svg{width:32px;height:32px;opacity:.5}
+.empty h3{font-family:var(--fhead);font-size:18px;color:var(--txt2);margin-bottom:8px}
+.empty p{font-size:13px;color:var(--txt3);line-height:1.6}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.38);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(3px);animation:fadein .18s}
+.modal{background:var(--card);border-radius:var(--r3);padding:28px;width:500px;max-width:92vw;box-shadow:var(--shadow2);animation:slidein .2s;border:1px solid var(--border)}
+.mh{display:flex;align-items:center;margin-bottom:22px}
+.mh h3{font-family:var(--fhead);font-size:17px;font-weight:600;flex:1}
+.mc{background:transparent;border:none;font-size:18px;cursor:pointer;color:var(--txt3);padding:0;line-height:1;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;transition:.12s}
+.mc:hover{background:var(--bg3);color:var(--txt)}
+.mf{margin-bottom:14px}
+.mf label{display:block;font-size:10.5px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.mf input,.mf select,.mf textarea{width:100%;padding:10px 12px;border:1px solid var(--border2);border-radius:9px;font-family:var(--fmain);font-size:13.5px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s;resize:vertical}
+.mf input:focus,.mf select:focus,.mf textarea:focus{border-color:var(--accent)}
+.mbr{display:flex;gap:9px;justify-content:flex-end;margin-top:20px}
+.btn-sec{padding:9px 18px;border:1px solid var(--border2);border-radius:9px;background:transparent;color:var(--txt);font-family:var(--fmain);font-size:13.5px;cursor:pointer;transition:.12s}
+.btn-sec:hover{background:var(--bg3)}
+.btn-pri{padding:9px 18px;border:none;border-radius:9px;background:var(--accent);color:#fff;font-family:var(--fmain);font-size:13.5px;font-weight:500;cursor:pointer;transition:.12s}
+.btn-pri:hover{background:var(--accent-h)}
+.btn-pri:disabled{opacity:.5;cursor:not-allowed}
+.btn-danger{padding:9px 18px;border:none;border-radius:9px;background:#E24B4A;color:#fff;font-family:var(--fmain);font-size:13.5px;font-weight:500;cursor:pointer;transition:.12s}
+.btn-danger:hover{background:#c93939}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;right:24px;padding:12px 18px;border-radius:11px;font-family:var(--fmain);font-size:13.5px;font-weight:500;box-shadow:var(--shadow2);z-index:300;display:flex;align-items:center;gap:9px;animation:slidein .25s;max-width:320px}
+.toast.ok{background:var(--accent);color:#fff}
+.toast.err{background:#E24B4A;color:#fff}
+.toast.warn{background:#BA7517;color:#fff}
+.toast svg{width:15px;height:15px;flex-shrink:0}
+
+/* AUTH SCREEN */
+#auth{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:500}
+.auth-wrap{display:flex;width:820px;max-width:96vw;background:var(--card);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden;box-shadow:var(--shadow2)}
+.auth-art{flex:1;background:var(--sidebar);padding:40px 36px;display:flex;flex-direction:column;justify-content:space-between;min-height:480px}
+.auth-art-logo{display:flex;align-items:center;gap:10px}
+.auth-art-logo span{font-family:var(--fhead);font-size:22px;color:#fff;font-weight:600}
+.auth-art h2{font-family:var(--fhead);font-size:26px;color:#fff;font-weight:600;line-height:1.35;margin:24px 0 12px}
+.auth-art p{font-size:13px;color:var(--st2);line-height:1.6}
+.auth-feat{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+.af{display:flex;align-items:center;gap:10px;color:var(--st);font-size:13px}
+.af-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.auth-form{width:340px;flex-shrink:0;padding:36px 32px;display:flex;flex-direction:column}
+.auth-tabs{display:flex;gap:0;border:1px solid var(--border);border-radius:9px;overflow:hidden;margin-bottom:24px}
+.atab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:500;cursor:pointer;background:transparent;border:none;color:var(--txt2);transition:.15s;font-family:var(--fmain)}
+.atab.on{background:var(--accent);color:#fff}
+.auth-field{margin-bottom:14px}
+.auth-field label{display:block;font-size:10.5px;font-weight:600;color:var(--txt3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.auth-field input{width:100%;padding:11px 13px;border:1px solid var(--border2);border-radius:9px;font-family:var(--fmain);font-size:13.5px;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s}
+.auth-field input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,106,79,.1)}
+.auth-err{color:#E24B4A;font-size:12px;text-align:center;margin-top:6px;min-height:18px}
+.auth-demo{text-align:center;margin-top:14px;font-size:11.5px;color:var(--txt3)}
+.auth-demo strong{color:var(--accent);font-weight:500}
+
+/* PROFILE */
+.prof-hero{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);padding:28px;box-shadow:var(--shadow);margin-bottom:20px;display:flex;align-items:center;gap:22px}
+.avatar{width:68px;height:68px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-family:var(--fhead);font-size:24px;font-weight:600;color:#fff;flex-shrink:0}
+.prof-info h2{font-family:var(--fhead);font-size:20px;font-weight:600;margin-bottom:4px}
+.prof-info p{color:var(--txt2);font-size:13px}
+.prof-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px}
+.pst{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:16px;text-align:center;box-shadow:var(--shadow)}
+.pst-n{font-family:var(--fhead);font-size:26px;font-weight:600;color:var(--accent)}
+.pst-l{font-size:12px;color:var(--txt2);margin-top:2px}
+
+/* SETTINGS */
+.set-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:24px;box-shadow:var(--shadow);margin-bottom:14px}
+.set-card h3{font-size:14px;font-weight:600;margin-bottom:16px;padding-bottom:11px;border-bottom:1px solid var(--border);color:var(--txt)}
+.set-row{display:flex;align-items:center;padding:13px 0;border-bottom:1px solid var(--border);gap:16px}
+.set-row:last-child{border-bottom:none;padding-bottom:0}
+.set-lbl{flex:1}
+.set-lbl strong{display:block;font-size:13.5px;font-weight:500;color:var(--txt)}
+.set-lbl span{font-size:12px;color:var(--txt2)}
+.tog-sw{width:42px;height:23px;background:var(--border2);border-radius:20px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;border:none}
+.tog-sw.on{background:var(--accent)}
+.tog-sw::after{content:'';position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog-sw.on::after{left:22px}
+.bsm{padding:7px 15px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-family:var(--fmain);font-size:12.5px;font-weight:500;cursor:pointer;transition:.12s}
+.bsm:hover{background:var(--accent-h)}
+.bsm.warn{background:var(--warm)}
+.bsm.warn:hover{background:#c55e3d}
+
+/* FOLDER SETTINGS */
+.fold-row{display:flex;align-items:center;gap:10px;padding:10px 13px;border:1px solid var(--border);border-radius:10px;margin-bottom:7px;background:var(--bg)}
+.fold-ic{width:28px;height:28px;border-radius:7px;background:var(--accent-l);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.fold-ic svg{width:13px;height:13px;color:var(--accent)}
+.fold-nm{flex:1;font-size:13.5px;font-weight:500;color:var(--txt)}
+.fold-cnt-lbl{font-size:12px;color:var(--txt3)}
+.fmb{padding:5px 11px;border:none;border-radius:7px;font-family:var(--fmain);font-size:12px;cursor:pointer;transition:.12s}
+.fmb.edit{background:var(--bg3);color:var(--txt2)}
+.fmb.edit:hover{background:var(--bg4)}
+.fmb.del{background:#FCEBEB;color:#A32D2D}
+.fmb.del:hover{background:#F7C1C1}
+.fold-add-row{display:flex;gap:9px;margin-top:13px}
+.fold-add-row input{flex:1;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;font-family:var(--fmain);font-size:13.5px;background:var(--bg);color:var(--txt);outline:none}
+.fold-add-row input:focus{border-color:var(--accent)}
+
+/* RESPONSIVE */
+@media(max-width:700px){
+  #sb{position:fixed;top:0;left:0;height:100%;z-index:50;transform:translateX(-100%);transition:transform .28s;width:252px !important;min-width:252px !important}
+  #sb.open{transform:none}
+  #sb.closed{transform:translateX(-100%)}
+  #tog{left:8px;top:16px}
+  #tog.sb-open-tog{left:260px}
+  .stats-row{grid-template-columns:1fr 1fr}
+  .bm-grid{grid-template-columns:1fr}
+  .form-grid{grid-template-columns:1fr}
+  .url-row{flex-direction:column}
+  .auth-art{display:none}
+  .auth-form{width:100%;padding:28px 22px}
+  .prof-hero{flex-direction:column;text-align:center}
+  .prof-stats{grid-template-columns:1fr 1fr 1fr}
+}
+@media(max-width:480px){
+  .stats-row{grid-template-columns:1fr 1fr}
+  .topbar{padding:12px 14px}
+  #ct{padding:16px}
+  .add-card{padding:18px}
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════ AUTH ══════════════════════════════════════ -->
+<div id="auth">
+  <div class="auth-wrap">
+    <div class="auth-art">
+      <div>
+        <div class="auth-art-logo">
+          <div class="sb-logomark" style="width:34px;height:34px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center">
+            <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2C9 2 4 5.5 4 10a5 5 0 0010 0c0-4.5-5-8-5-8z" fill="#D8F3DC"/><line x1="9" y1="7" x2="9" y2="15" stroke="#D8F3DC" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </div>
+          <span>Folia</span>
+        </div>
+        <h2>Your smarter bookmark home</h2>
+        <p>Organize, tag, and search every link you care about — all in one place.</p>
+        <div class="auth-feat">
+          <div class="af"><div class="af-dot"></div>AI-powered smart tagging</div>
+          <div class="af"><div class="af-dot"></div>Auto metadata fetch</div>
+          <div class="af"><div class="af-dot"></div>Folder-based organization</div>
+          <div class="af"><div class="af-dot"></div>Broken link detection</div>
+          <div class="af"><div class="af-dot"></div>Full-text search across notes &amp; tags</div>
+        </div>
+      </div>
+      <p style="font-size:11px;color:var(--st3)">All data stored locally in your browser.</p>
+    </div>
+    <div class="auth-form">
+      <div style="font-family:var(--fhead);font-size:22px;font-weight:600;color:var(--txt);margin-bottom:4px">Welcome back</div>
+      <div style="font-size:12.5px;color:var(--txt2);margin-bottom:22px">Sign in to your library</div>
+      <div class="auth-tabs">
+        <button class="atab on" id="tab-li" onclick="swTab('li')">Sign in</button>
+        <button class="atab" id="tab-su" onclick="swTab('su')">Create account</button>
+      </div>
+      <div id="form-li">
+        <div class="auth-field"><label>Email</label><input id="li-em" type="email" value="demo@folia.app" placeholder="you@example.com"></div>
+        <div class="auth-field"><label>Password</label><input id="li-pw" type="password" value="demo1234" placeholder="••••••••"></div>
+        <button class="btn-pri" style="width:100%;padding:12px;margin-top:4px" onclick="doLogin()">Sign in</button>
+        <div class="auth-err" id="li-err"></div>
+        <div class="auth-demo">Demo: <strong>demo@folia.app</strong> / <strong>demo1234</strong></div>
+      </div>
+      <div id="form-su" style="display:none">
+        <div class="auth-field"><label>Username</label><input id="su-nm" type="text" placeholder="Your name"></div>
+        <div class="auth-field"><label>Email</label><input id="su-em" type="email" placeholder="you@example.com"></div>
+        <div class="auth-field"><label>Password</label><input id="su-pw" type="password" placeholder="Min 6 characters"></div>
+        <button class="btn-pri" style="width:100%;padding:12px;margin-top:4px" onclick="doSignup()">Create account</button>
+        <div class="auth-err" id="su-err"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════ APP ══════════════════════════════════════ -->
+<div id="wrap" style="display:none">
+  <button id="tog" onclick="toggleSb()">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+
+  <!-- SIDEBAR -->
+  <div id="sb">
+    <div class="sb-logo">
+      <div class="sb-logomark">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M9 2C9 2 4 5.5 4 10a5 5 0 0010 0c0-4.5-5-8-5-8z" fill="#D8F3DC"/><line x1="9" y1="7" x2="9" y2="15" stroke="#D8F3DC" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div>
+        <div class="sb-logotxt">Folia</div>
+        <div class="sb-logosub">Bookmarks</div>
+      </div>
+    </div>
+    <div class="sb-nav">
+      <div class="sb-sec">Main</div>
+      <div class="ni on" id="ni-home" onclick="go('home')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>
+        Home
+      </div>
+      <div class="ni" id="ni-lib" onclick="go('lib')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        My Library
+        <span class="ni-cnt" id="lib-cnt">0</span>
+      </div>
+      <div class="sb-sec">Folders</div>
+      <div id="sb-folders"></div>
+      <div class="ni" style="opacity:.7;font-size:12.5px" onclick="promptAddFolder()">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        New folder
+      </div>
+    </div>
+    <div class="sb-foot">
+      <div class="ni" id="ni-prof" onclick="go('prof')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <span id="sb-uname">Profile</span>
+      </div>
+      <div class="ni" id="ni-set" onclick="go('set')">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        Settings
+      </div>
+      <div class="ni ni-logout" onclick="doLogout()">
+        <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Logout
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div id="main">
+    <div class="topbar">
+      <div class="tb-title" id="tb-title">Home</div>
+      <div class="srch">
+        <span class="srch-ic"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></span>
+        <input id="g-srch" type="text" placeholder="Search bookmarks… (Ctrl+K)" oninput="onSearch(this.value)">
+      </div>
+      <div class="tb-actions">
+        <button class="ib" onclick="go('home')" title="Add bookmark">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        </button>
+        <button class="ib" onclick="toggleDark()" title="Toggle dark mode">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
+      </div>
+    </div>
+    <div id="ct"></div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div id="toast-root"></div>
+
+<!-- ══════════════════════════════════════ JS ══════════════════════════════════════ -->
+<script>
+/* ─── STATE & PERSISTENCE ─── */
+const SK = 'folia_v2';
+let S = { users:[], cur:null, bookmarks:[], folders:[], dark:false, sbOpen:true, view:'home', curFolder:null, srch:'', viewMode:'grid' };
+
+function sv() { try { localStorage.setItem(SK, JSON.stringify(S)); } catch(e) {} }
+function ld() { try { const d = localStorage.getItem(SK); if (d) Object.assign(S, JSON.parse(d)); } catch(e) {} }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+
+function initDemo() {
+  if (!S.users.length) {
+    S.users = [{ id:'u1', username:'Alex Morgan', email:'demo@folia.app', password:'demo1234', created: new Date().toISOString() }];
+    S.folders = [
+      { id:'f1', uid:'u1', name:'Study' },
+      { id:'f2', uid:'u1', name:'Coding' },
+      { id:'f3', uid:'u1', name:'Design' },
+      { id:'f4', uid:'u1', name:'Articles' },
+    ];
+    const now = Date.now();
+    S.bookmarks = [
+      { id:'b1', uid:'u1', fid:'f2', url:'https://github.com', title:'GitHub — Where the world builds software', desc:'Millions of developers and companies build, ship, and maintain their software on GitHub.', thumb:'', note:'Main coding platform — check daily', tags:['git','open-source','dev'], date:new Date(now-86400000*4).toISOString(), broken:false, pinned:false },
+      { id:'b2', uid:'u1', fid:'f3', url:'https://dribbble.com', title:"Dribbble — Discover the World's Top Designers", desc:'Find top designers and creative professionals.', thumb:'', note:'Daily design inspiration source', tags:['design','ui','ux'], date:new Date(now-86400000*3).toISOString(), broken:false, pinned:true },
+      { id:'b3', uid:'u1', fid:'f1', url:'https://developer.mozilla.org', title:'MDN Web Docs', desc:'Resources for developers, by developers.', thumb:'', note:'Essential web dev reference', tags:['docs','web','reference'], date:new Date(now-86400000*2).toISOString(), broken:false, pinned:false },
+      { id:'b4', uid:'u1', fid:'f4', url:'https://css-tricks.com', title:'CSS-Tricks', desc:'Daily articles about CSS, HTML, JavaScript, and all things related to web design and development.', thumb:'', note:'Great CSS tips and tricks', tags:['css','frontend','tutorials'], date:new Date(now-86400000).toISOString(), broken:false, pinned:false },
+      { id:'b5', uid:'u1', fid:'f2', url:'https://stackoverflow.com', title:'Stack Overflow — Where Developers Learn', desc:'The largest developer community online.', thumb:'', note:'Go-to for debugging help', tags:['community','q&a','debug'], date:new Date(now-3600000*5).toISOString(), broken:false, pinned:false },
+      { id:'b6', uid:'u1', fid:'f4', url:'https://smashingmagazine.com', title:'Smashing Magazine', desc:'For web designers and developers.', thumb:'', note:'Quality articles on web dev and design', tags:['articles','web','design'], date:new Date(now-3600000*2).toISOString(), broken:false, pinned:false },
+    ];
+    sv();
+  }
+}
+
+ld(); initDemo();
+
+/* ─── HELPERS ─── */
+function ud() { return { bms: S.bookmarks.filter(b => b.uid === S.cur?.id), flds: S.folders.filter(f => f.uid === S.cur?.id) }; }
+function dom(url) { try { return new URL(url).hostname.replace('www.',''); } catch { return url; } }
+function fav(url) { try { return `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=64`; } catch { return ''; } }
+function fmtDate(d) { return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }); }
+function fmtShort(d) { return new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric' }); }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ─── AUTH ─── */
+function swTab(t) {
+  document.getElementById('tab-li').classList.toggle('on', t === 'li');
+  document.getElementById('tab-su').classList.toggle('on', t === 'su');
+  document.getElementById('form-li').style.display = t === 'li' ? '' : 'none';
+  document.getElementById('form-su').style.display = t === 'su' ? '' : 'none';
+}
+
+function doLogin() {
+  const em = document.getElementById('li-em').value.trim();
+  const pw = document.getElementById('li-pw').value;
+  const u = S.users.find(x => x.email === em && x.password === pw);
+  if (!u) { document.getElementById('li-err').textContent = 'Invalid email or password'; return; }
+  S.cur = u; sv();
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('wrap').style.display = 'flex';
+  boot();
+}
+
+function doSignup() {
+  const nm = document.getElementById('su-nm').value.trim();
+  const em = document.getElementById('su-em').value.trim();
+  const pw = document.getElementById('su-pw').value;
+  const err = document.getElementById('su-err');
+  if (!nm || !em || !pw) { err.textContent = 'All fields required'; return; }
+  if (pw.length < 6) { err.textContent = 'Password must be at least 6 characters'; return; }
+  if (S.users.find(x => x.email === em)) { err.textContent = 'Email already in use'; return; }
+  const u = { id:uid(), username:nm, email:em, password:pw, created: new Date().toISOString() };
+  S.users.push(u); S.cur = u; sv();
+  document.getElementById('auth').style.display = 'none';
+  document.getElementById('wrap').style.display = 'flex';
+  boot();
+}
+
+function doLogout() {
+  S.cur = null; sv();
+  document.getElementById('wrap').style.display = 'none';
+  document.getElementById('auth').style.display = 'flex';
+  swTab('li');
+}
+
+/* ─── BOOT ─── */
+function boot() {
+  document.getElementById('sb-uname').textContent = S.cur.username;
+  if (S.dark) document.documentElement.setAttribute('data-dark','');
+  else document.documentElement.removeAttribute('data-dark');
+  renderSbFolders(); updLibCnt(); go(S.view || 'home');
+}
+
+/* ─── SIDEBAR ─── */
+function toggleSb() {
+  const sb = document.getElementById('sb');
+  const tog = document.getElementById('tog');
+  if (window.innerWidth <= 700) {
+    sb.classList.toggle('open');
+    tog.classList.toggle('sb-open-tog', sb.classList.contains('open'));
+  } else {
+    S.sbOpen = !S.sbOpen;
+    sb.classList.toggle('closed', !S.sbOpen);
+    tog.classList.toggle('sh', !S.sbOpen);
+  }
+}
+
+function toggleDark() {
+  S.dark = !S.dark;
+  if (S.dark) document.documentElement.setAttribute('data-dark','');
+  else document.documentElement.removeAttribute('data-dark');
+  sv();
+  const btn = document.querySelector('.tog-sw[data-role="dark"]');
+  if (btn) btn.classList.toggle('on', S.dark);
+}
+
+function updLibCnt() { document.getElementById('lib-cnt').textContent = ud().bms.length; }
+
+function renderSbFolders() {
+  const { bms, flds } = ud();
+  document.getElementById('sb-folders').innerHTML = flds.map(f => {
+    const cnt = bms.filter(b => b.fid === f.id).length;
+    return `<div class="ni" id="ni-f-${f.id}" onclick="goFolder('${f.id}')">
+      <svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24" style="width:15px;height:15px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>
+      ${esc(f.name)}<span class="ni-cnt">${cnt}</span>
+    </div>`;
+  }).join('');
+}
+
+function setActive(id) {
+  document.querySelectorAll('.ni').forEach(el => el.classList.remove('on'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('on');
+}
+
+/* ─── NAVIGATION ─── */
+function go(view) {
+  S.view = view; S.curFolder = null; sv();
+  const titles = { home:'Home', lib:'My Library', prof:'My Profile', set:'Settings' };
+  document.getElementById('tb-title').textContent = titles[view] || 'Folia';
+  setActive('ni-' + view);
+  if (view === 'home') renderHome();
+  else if (view === 'lib') renderLib();
+  else if (view === 'prof') renderProf();
+  else if (view === 'set') renderSet();
+}
+
+function goFolder(fid) {
+  S.view = 'folder'; S.curFolder = fid; sv();
+  const { flds } = ud();
+  const f = flds.find(x => x.id === fid);
+  document.getElementById('tb-title').textContent = f ? f.name : 'Folder';
+  setActive('ni-f-' + fid);
+  renderFolder(fid);
+}
+
+/* ─── HOME ─── */
+let metaTimeout = null, fetchedMeta = {};
+
+function renderHome() {
+  const { bms, flds } = ud();
+  const recent = bms.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0, 8);
+  const pinned = bms.filter(b => b.pinned);
+  const broken = bms.filter(b => b.broken);
+  const fOpts = flds.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+
+  document.getElementById('ct').innerHTML = `
+<div class="add-card">
+  <div class="add-ht">Save a bookmark</div>
+  <div class="add-hs">Paste any URL — we'll fetch metadata and AI-suggest tags automatically</div>
+  <div class="url-row">
+    <input class="url-inp" id="url-inp" type="url" placeholder="https://example.com/article…" oninput="onUrlTyped(this.value)">
+    <button class="btn-save" id="btn-sv" onclick="doSave()">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="display:inline;vertical-align:middle;margin-right:6px"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
+      Save
+    </button>
+  </div>
+  <div class="form-grid">
+    <div class="fl"><label>Folder</label><select id="fld-sel">${fOpts || '<option value="">No folders yet</option>'}</select></div>
+    <div class="fl"><label>Personal note</label><input type="text" id="note-inp" placeholder="Why are you saving this?"></div>
+    <div class="fl"><label>Tags (comma separated)</label><input type="text" id="tags-inp" placeholder="css, tools, reference…"></div>
+  </div>
+  <div id="meta-area"></div>
+</div>
+<div class="stats-row">
+  <div class="sc">
+    <div class="sc-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+    <div class="sc-num">${bms.length}</div><div class="sc-lbl">Total bookmarks</div>
+  </div>
+  <div class="sc">
+    <div class="sc-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+    <div class="sc-num">${flds.length}</div><div class="sc-lbl">Folders</div>
+  </div>
+  <div class="sc">
+    <div class="sc-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+    <div class="sc-num">${broken.length}</div><div class="sc-lbl">Broken links</div>
+  </div>
+  <div class="sc">
+    <div class="sc-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg></div>
+    <div class="sc-num">${[...new Set(bms.flatMap(b => b.tags||[]))].length}</div><div class="sc-lbl">Unique tags</div>
+  </div>
+</div>
+${pinned.length ? `<div class="sh"><h2>Pinned</h2></div><div class="bm-grid" style="margin-bottom:24px">${pinned.map(b => bmCard(b, flds, 'grid')).join('')}</div>` : ''}
+<div class="sh"><h2>Recently saved</h2><span onclick="go('lib')" style="font-size:12.5px;color:var(--accent);cursor:pointer;text-decoration:none">View all →</span></div>
+${recent.length ? `<div class="bm-grid">${recent.map(b => bmCard(b, flds, 'grid')).join('')}</div>` : emptyEl('No bookmarks yet', 'Paste a URL above to save your first bookmark!')}`;
+}
+
+function onUrlTyped(val) {
+  clearTimeout(metaTimeout);
+  fetchedMeta = {};
+  if (!val || !val.startsWith('http')) { document.getElementById('meta-area').innerHTML = ''; return; }
+  document.getElementById('meta-area').innerHTML = `<div style="padding:14px;color:var(--txt2);font-size:13px;display:flex;align-items:center;gap:10px;background:var(--bg3);border-radius:10px;margin-top:2px"><div class="dots"><span></span><span></span><span></span></div>Fetching page metadata…</div>`;
+  metaTimeout = setTimeout(() => fetchMeta(val), 600);
+}
+
+async function fetchMeta(url) {
+  try {
+    const d = dom(url);
+    const name = d.split('.')[0];
+    const cap = name.charAt(0).toUpperCase() + name.slice(1);
+    fetchedMeta = { title: cap, desc: `Content from ${d}`, url, favicon: fav(url) };
+    const area = document.getElementById('meta-area');
+    if (!area) return;
+    area.innerHTML = `<div class="meta-prev" style="margin-top:10px">
+      <div class="meta-fav"><img src="${fetchedMeta.favicon}" onerror="this.style.display='none'"></div>
+      <div class="meta-body" style="flex:1">
+        <h4 id="meta-title-txt">${esc(fetchedMeta.title)}</h4>
+        <p>${esc(fetchedMeta.desc)}</p>
+        <div class="meta-url">${esc(url)}</div>
+        <div class="meta-tags" id="ai-tags-area">
+          <span style="font-size:11.5px;color:var(--txt3);display:flex;align-items:center;gap:6px"><div class="dots"><span></span><span></span><span></span></div>AI generating tags…</span>
+        </div>
+      </div>
+    </div>`;
+    genAiTags(url, d);
+  } catch(e) { document.getElementById('meta-area').innerHTML = ''; }
+}
+
+async function genAiTags(url, domain) {
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{ role:'user', content:`Given this URL: ${url} (domain: ${domain}), suggest 3-5 short relevant tags for a bookmark manager. Also suggest a clean concise title (under 60 chars). Respond ONLY with valid JSON: {"tags":["tag1","tag2"],"title":"Clean Title"}` }]
+      })
+    });
+    const data = await resp.json();
+    const txt = data.content?.map(c => c.text || '').join('');
+    const parsed = JSON.parse(txt.replace(/```json|```/g,'').trim());
+    fetchedMeta.aiTags = parsed.tags || [];
+    fetchedMeta.aiTitle = parsed.title || fetchedMeta.title;
+    const area = document.getElementById('ai-tags-area');
+    const titleEl = document.getElementById('meta-title-txt');
+    if (titleEl && parsed.title) titleEl.textContent = parsed.title;
+    if (area && fetchedMeta.aiTags.length) {
+      area.innerHTML = `<span class="ai-badge"><svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>AI tags</span>${fetchedMeta.aiTags.map(t => `<span class="ai-tag" onclick="useAiTag('${esc(t)}')" style="cursor:pointer" title="Click to add">${esc(t)}</span>`).join('')}`;
+      const ti = document.getElementById('tags-inp');
+      if (ti && !ti.value) ti.value = fetchedMeta.aiTags.join(', ');
+      if (fetchedMeta.aiTitle) fetchedMeta.title = fetchedMeta.aiTitle;
+    }
+  } catch(e) {
+    const area = document.getElementById('ai-tags-area');
+    if (area) area.innerHTML = `<span style="font-size:11px;color:var(--txt3)">AI unavailable — add tags manually</span>`;
+  }
+}
+
+function useAiTag(tag) {
+  const inp = document.getElementById('tags-inp');
+  if (!inp) return;
+  const cur = inp.value.split(',').map(t => t.trim()).filter(Boolean);
+  if (!cur.includes(tag)) { cur.push(tag); inp.value = cur.join(', '); }
+}
+
+function doSave() {
+  const url = document.getElementById('url-inp')?.value.trim();
+  if (!url || !url.startsWith('http')) { toast('Please enter a valid URL starting with http', 'err'); return; }
+  const fid = document.getElementById('fld-sel')?.value || '';
+  const note = document.getElementById('note-inp')?.value.trim() || '';
+  const tagsRaw = document.getElementById('tags-inp')?.value || '';
+  const tags = tagsRaw.split(',').map(t => t.trim()).filter(Boolean);
+  const bm = {
+    id: uid(), uid: S.cur.id, fid, url,
+    title: fetchedMeta.aiTitle || fetchedMeta.title || dom(url),
+    desc: fetchedMeta.desc || '',
+    thumb: '', note, tags,
+    date: new Date().toISOString(), broken: false, pinned: false
+  };
+  S.bookmarks.push(bm); sv(); fetchedMeta = {};
+  toast('Bookmark saved!', 'ok');
+  updLibCnt(); renderSbFolders(); renderHome();
+}
+
+/* ─── LIBRARY ─── */
+function renderLib(q) {
+  const { bms, flds } = ud();
+  const sq = (q !== undefined ? q : (S.srch || '')).toLowerCase();
+  let filtered = bms.filter(b => {
+    if (!sq) return true;
+    return (b.title||'').toLowerCase().includes(sq) ||
+           (b.url||'').toLowerCase().includes(sq) ||
+           (b.note||'').toLowerCase().includes(sq) ||
+           (b.tags||[]).some(t => t.toLowerCase().includes(sq)) ||
+           (b.desc||'').toLowerCase().includes(sq);
+  });
+  const sortSel = document.getElementById('lib-sort')?.value || 'date-desc';
+  filtered = sortBms(filtered, sortSel);
+
+  document.getElementById('ct').innerHTML = `
+<div class="sh">
+  <h2>My Library${sq ? ` <span style="font-size:13px;font-weight:400;color:var(--txt3)">— "${esc(sq)}"</span>` : ''}</h2>
+  <div class="vt">
+    <button class="vb ${S.viewMode==='grid'?'on':''}" onclick="setVMode('grid')"><svg fill="currentColor" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></button>
+    <button class="vb ${S.viewMode==='list'?'on':''}" onclick="setVMode('list')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+  </div>
+</div>
+<div class="filter-bar">
+  <span class="filter-lbl">Folder:</span>
+  <button class="fpill ${!S.curFolder?'on':''}" onclick="filterFld(null)">All (${bms.length})</button>
+  ${flds.map(f => `<button class="fpill ${S.curFolder===f.id?'on':''}" onclick="filterFld('${f.id}')">${esc(f.name)} (${bms.filter(b=>b.fid===f.id).length})</button>`).join('')}
+  <select id="lib-sort" class="sort-sel" onchange="renderLib()">
+    <option value="date-desc" ${sortSel==='date-desc'?'selected':''}>Newest first</option>
+    <option value="date-asc"  ${sortSel==='date-asc' ?'selected':''}>Oldest first</option>
+    <option value="alpha"     ${sortSel==='alpha'    ?'selected':''}>A → Z</option>
+    <option value="broken"    ${sortSel==='broken'   ?'selected':''}>Broken first</option>
+  </select>
+</div>
+<div id="bm-area">${buildBmList(filtered, flds)}</div>`;
+}
+
+function sortBms(bms, mode) {
+  if (mode === 'date-asc') return bms.slice().sort((a,b) => new Date(a.date) - new Date(b.date));
+  if (mode === 'alpha')    return bms.slice().sort((a,b) => (a.title||'').localeCompare(b.title||''));
+  if (mode === 'broken')   return bms.slice().sort((a,b) => b.broken - a.broken);
+  return bms.slice().sort((a,b) => new Date(b.date) - new Date(a.date));
+}
+
+function buildBmList(bms, flds) {
+  const show = S.curFolder ? bms.filter(b => b.fid === S.curFolder) : bms;
+  if (!show.length) return emptyEl('No bookmarks found', 'Try a different filter or search term');
+  const cls = S.viewMode === 'list' ? 'bm-list' : 'bm-grid';
+  return `<div class="${cls}">${show.map(b => bmCard(b, flds, S.viewMode)).join('')}</div>`;
+}
+
+function filterFld(fid) { S.curFolder = fid; renderLib(); }
+function setVMode(m)     { S.viewMode = m; sv(); renderLib(); }
+
+function onSearch(q) {
+  S.srch = q;
+  if (S.view === 'lib') renderLib(q);
+  else if (q) { go('lib'); }
+}
+
+/* ─── FOLDER VIEW ─── */
+function renderFolder(fid) {
+  const { bms, flds } = ud();
+  const f = flds.find(x => x.id === fid);
+  const fBms = bms.filter(b => b.fid === fid).sort((a,b) => new Date(b.date) - new Date(a.date));
+  document.getElementById('ct').innerHTML = `
+<div class="sh">
+  <h2>${esc(f ? f.name : 'Folder')} <span style="font-size:13px;font-weight:400;color:var(--txt3)">(${fBms.length})</span></h2>
+  <div class="vt">
+    <button class="vb ${S.viewMode==='grid'?'on':''}" onclick="setVModeFolder('grid','${fid}')"><svg fill="currentColor" viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg></button>
+    <button class="vb ${S.viewMode==='list'?'on':''}" onclick="setVModeFolder('list','${fid}')"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></button>
+  </div>
+</div>
+${fBms.length ? `<div class="${S.viewMode==='list'?'bm-list':'bm-grid'}">${fBms.map(b => bmCard(b, flds, S.viewMode)).join('')}</div>` : emptyEl('Folder is empty', 'Save some bookmarks to this folder!')}`;
+}
+function setVModeFolder(m, fid) { S.viewMode = m; sv(); renderFolder(fid); }
+
+/* ─── BOOKMARK CARD ─── */
+function bmCard(bm, flds, mode) {
+  const d = dom(bm.url);
+  const favUrl = fav(bm.url);
+  const tags = (bm.tags||[]).slice(0,3).map(t => `<span class="tag">${esc(t)}</span>`).join('');
+  const broken = bm.broken ? `<span class="broken-b">Broken</span>` : '';
+  const pin = bm.pinned ? `<span style="font-size:10px;padding:2px 7px;background:var(--accent-l);color:var(--accent);border-radius:20px;font-weight:600">Pinned</span>` : '';
+  const acts = `<div class="bmc-acts">
+    <button class="ab" onclick="event.stopPropagation();togglePin('${bm.id}')" title="${bm.pinned?'Unpin':'Pin'}">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" ${bm.pinned?'fill="currentColor"':''}/></svg>
+    </button>
+    <button class="ab" onclick="event.stopPropagation();editBm('${bm.id}')" title="Edit">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+    </button>
+    <button class="ab danger" onclick="event.stopPropagation();delBm('${bm.id}')" title="Delete">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+    </button>
+  </div>`;
+
+  if (mode === 'list') {
+    return `<div class="bml" onclick="openUrl('${esc(bm.url)}')">
+      <div class="bml-ico"><img src="${favUrl}" onerror="this.style.opacity=0"></div>
+      <div class="bml-body">
+        <div class="bmc-meta"><img src="${favUrl}" onerror="this.style.display='none'">${esc(d)}</div>
+        <div class="bmc-title">${esc(bm.title||d)}</div>
+        ${bm.note ? `<div class="bmc-note">"${esc(bm.note)}"</div>` : ''}
+        <div class="bmc-foot">${pin}${tags}${broken}<span class="bmc-date">${fmtShort(bm.date)}</span></div>
+      </div>
+      ${acts}
+    </div>`;
+  }
+
+  return `<div class="bmc" onclick="openUrl('${esc(bm.url)}')">
+    <div class="bmc-thumb">
+      <div class="bmc-thumb-inner">
+        <img class="fav" src="${favUrl}" onerror="this.style.display='none'">
+        <div class="bmc-domain-chip">${esc(d)}</div>
+      </div>
+    </div>
+    <div class="bmc-body">
+      <div class="bmc-meta"><img src="${favUrl}" onerror="this.style.display='none'">${esc(d)}</div>
+      <div class="bmc-title">${esc(bm.title||d)}</div>
+      ${bm.note ? `<div class="bmc-note">"${esc(bm.note)}"</div>` : ''}
+      <div class="bmc-foot">${pin}${tags}${broken}<span class="bmc-date">${fmtShort(bm.date)}</span></div>
+    </div>
+    ${acts}
+  </div>`;
+}
+
+function openUrl(url) { window.open(url, '_blank'); }
+
+function togglePin(id) {
+  const b = S.bookmarks.find(x => x.id === id);
+  if (!b) return;
+  b.pinned = !b.pinned; sv();
+  toast(b.pinned ? 'Pinned!' : 'Unpinned', 'ok');
+  if (S.view === 'home') renderHome();
+  else if (S.view === 'lib') renderLib();
+  else if (S.view === 'folder') renderFolder(S.curFolder);
+}
+
+function emptyEl(h, p) {
+  return `<div class="empty">
+    <div class="empty-art"><svg fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></div>
+    <h3>${h}</h3><p>${p}</p>
+  </div>`;
+}
+
+/* ─── EDIT BOOKMARK ─── */
+function editBm(id) {
+  const bm = S.bookmarks.find(x => x.id === id);
+  if (!bm) return;
+  const { flds } = ud();
+  const fOpts = flds.map(f => `<option value="${f.id}" ${f.id===bm.fid?'selected':''}>${esc(f.name)}</option>`).join('');
+  showModal(`
+<div class="mh"><h3>Edit bookmark</h3><button class="mc" onclick="closeModal()">✕</button></div>
+<div class="mf"><label>Title</label><input id="em-t" type="text" value="${esc(bm.title||'')}"></div>
+<div class="mf"><label>URL</label><input id="em-u" type="url" value="${esc(bm.url||'')}"></div>
+<div class="mf"><label>Folder</label><select id="em-f">${fOpts}</select></div>
+<div class="mf"><label>Note</label><textarea id="em-n" rows="2">${esc(bm.note||'')}</textarea></div>
+<div class="mf"><label>Tags (comma separated)</label><input id="em-tg" type="text" value="${esc((bm.tags||[]).join(', '))}"></div>
+<div class="mbr">
+  <button class="btn-sec" onclick="closeModal()">Cancel</button>
+  <button class="btn-pri" onclick="saveEdit('${id}')">Save changes</button>
+</div>`);
+}
+
+function saveEdit(id) {
+  const bm = S.bookmarks.find(x => x.id === id);
+  if (!bm) return;
+  bm.title  = document.getElementById('em-t').value.trim() || bm.title;
+  bm.url    = document.getElementById('em-u').value.trim() || bm.url;
+  bm.fid    = document.getElementById('em-f').value;
+  bm.note   = document.getElementById('em-n').value.trim();
+  bm.tags   = document.getElementById('em-tg').value.split(',').map(t => t.trim()).filter(Boolean);
+  sv(); closeModal(); toast('Bookmark updated', 'ok');
+  renderSbFolders();
+  if (S.view === 'home') renderHome();
+  else if (S.view === 'lib') renderLib();
+  else if (S.view === 'folder') renderFolder(S.curFolder);
+}
+
+function delBm(id) {
+  const bm = S.bookmarks.find(x => x.id === id);
+  showModal(`
+<div class="mh"><h3>Delete bookmark?</h3><button class="mc" onclick="closeModal()">✕</button></div>
+<p style="color:var(--txt2);font-size:13.5px;line-height:1.6;margin-bottom:4px">Remove <strong>${esc(bm?.title||bm?.url||'this bookmark')}</strong>?<br>This cannot be undone.</p>
+<div class="mbr">
+  <button class="btn-sec" onclick="closeModal()">Cancel</button>
+  <button class="btn-danger" onclick="confirmDel('${id}')">Delete</button>
+</div>`);
+}
+
+function confirmDel(id) {
+  S.bookmarks = S.bookmarks.filter(x => x.id !== id); sv();
+  closeModal(); toast('Bookmark deleted', 'ok');
+  updLibCnt(); renderSbFolders();
+  if (S.view === 'home') renderHome();
+  else if (S.view === 'lib') renderLib();
+  else if (S.view === 'folder') renderFolder(S.curFolder);
+}
+
+/* ─── BROKEN LINK CHECKER ─── */
+async function checkBrokenLinks() {
+  const { bms } = ud();
+  toast('Checking ' + bms.length + ' links…', 'ok');
+  let found = 0;
+  for (const bm of bms) {
+    const b = S.bookmarks.find(x => x.id === bm.id);
+    if (!b) continue;
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:60,
+          messages:[{ role:'user', content:`Is this a valid, commonly accessible website URL? ${bm.url} — Answer ONLY with JSON: {"valid":true} or {"valid":false}` }]
+        })
+      });
+      const d = await resp.json();
+      const txt = d.content?.map(c => c.text||'').join('');
+      const p = JSON.parse(txt.replace(/```json|```/g,'').trim());
+      b.broken = !p.valid;
+      if (b.broken) found++;
+    } catch { b.broken = false; }
+  }
+  sv();
+  if (found > 0) toast(`Found ${found} broken link${found > 1 ? 's' : ''}`, 'warn');
+  else toast('All links look good!', 'ok');
+  if (S.view === 'home') renderHome();
+  else if (S.view === 'lib') renderLib();
+}
+
+/* ─── PROFILE ─── */
+function renderProf() {
+  const { bms, flds } = ud();
+  const u = S.cur;
+  const init = (u.username||'?').split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+  const allTags = [...new Set(bms.flatMap(b => b.tags||[]))];
+  const since = u.created ? new Date(u.created).toLocaleDateString('en-US',{month:'long',year:'numeric'}) : 'Today';
+  const recent = bms.slice().sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,5);
+
+  document.getElementById('ct').innerHTML = `
+<div class="prof-hero">
+  <div class="avatar">${init}</div>
+  <div class="prof-info">
+    <h2>${esc(u.username)}</h2>
+    <p>${esc(u.email)}</p>
+    <p style="font-size:12px;color:var(--txt3);margin-top:4px">Member since ${since}</p>
+  </div>
+</div>
+<div class="prof-stats">
+  <div class="pst"><div class="pst-n">${bms.length}</div><div class="pst-l">Bookmarks</div></div>
+  <div class="pst"><div class="pst-n">${flds.length}</div><div class="pst-l">Folders</div></div>
+  <div class="pst"><div class="pst-n">${allTags.length}</div><div class="pst-l">Unique tags</div></div>
+</div>
+<div class="sh" style="margin-top:8px"><h2>Top tags</h2></div>
+<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:24px">
+  ${allTags.length
+    ? allTags.slice(0,20).map(t => `<span class="ai-tag" style="font-size:12px">${esc(t)} <span style="opacity:.6">(${bms.filter(b=>(b.tags||[]).includes(t)).length})</span></span>`).join('')
+    : `<p style="color:var(--txt3);font-size:13px">No tags yet. Add tags when saving bookmarks.</p>`}
+</div>
+<div class="sh"><h2>Recent activity</h2></div>
+<div class="bm-list">
+  ${recent.length ? recent.map(b => `
+  <div class="bml" onclick="openUrl('${esc(b.url)}')">
+    <div class="bml-ico"><img src="${fav(b.url)}" onerror="this.style.opacity=0"></div>
+    <div class="bml-body">
+      <div class="bmc-meta">${esc(dom(b.url))}</div>
+      <div class="bmc-title">${esc(b.title||dom(b.url))}</div>
+      <div style="font-size:11.5px;color:var(--txt3);margin-top:4px">${fmtDate(b.date)}</div>
+    </div>
+  </div>`).join('') : `<p style="color:var(--txt3);font-size:13px">No recent activity</p>`}
+</div>`;
+}
+
+/* ─── SETTINGS ─── */
+function renderSet() {
+  const { bms, flds } = ud();
+  document.getElementById('ct').innerHTML = `
+<div class="set-card">
+  <h3>Appearance</h3>
+  <div class="set-row">
+    <div class="set-lbl"><strong>Dark mode</strong><span>Switch between light and dark themes</span></div>
+    <button class="tog-sw ${S.dark?'on':''}" data-role="dark" onclick="toggleDark();this.classList.toggle('on')"></button>
+  </div>
+</div>
+<div class="set-card">
+  <h3>Folders</h3>
+  ${getFoldersHtml(flds, bms)}
+  <div class="fold-add-row">
+    <input type="text" id="nf-name" placeholder="New folder name…" onkeydown="if(event.key==='Enter')addFolder()">
+    <button class="bsm" onclick="addFolder()">Add folder</button>
+  </div>
+</div>
+<div class="set-card">
+  <h3>Smart features</h3>
+  <div class="set-row">
+    <div class="set-lbl"><strong>Check broken links</strong><span>AI verifies all saved URLs are still reachable</span></div>
+    <button class="bsm" onclick="checkBrokenLinks()">Run check</button>
+  </div>
+  <div class="set-row">
+    <div class="set-lbl"><strong>Export bookmarks</strong><span>Download all your bookmarks as JSON</span></div>
+    <button class="bsm" onclick="exportData()">Export JSON</button>
+  </div>
+  <div class="set-row">
+    <div class="set-lbl"><strong>Import bookmarks</strong><span>Import from a previously exported JSON file</span></div>
+    <button class="bsm" onclick="importData()">Import JSON</button>
+  </div>
+</div>
+<div class="set-card">
+  <h3>Account</h3>
+  <div class="set-row">
+    <div class="set-lbl"><strong>Change password</strong><span>Update your account password</span></div>
+    <button class="bsm" onclick="changePwModal()">Change</button>
+  </div>
+  <div class="set-row">
+    <div class="set-lbl"><strong>Delete account</strong><span style="color:#A32D2D">Permanently remove your account and all data</span></div>
+    <button class="bsm warn" onclick="delAccModal()">Delete account</button>
+  </div>
+</div>`;
+}
+
+function getFoldersHtml(flds, bms) {
+  if (!flds.length) return `<p style="color:var(--txt3);font-size:13px;margin-bottom:14px">No folders yet</p>`;
+  return flds.map(f => `
+<div class="fold-row">
+  <div class="fold-ic"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg></div>
+  <span class="fold-nm">${esc(f.name)}</span>
+  <span class="fold-cnt-lbl">${bms.filter(b=>b.fid===f.id).length} items</span>
+  <button class="fmb edit" onclick="renameFolderModal('${f.id}')">Rename</button>
+  <button class="fmb del"  onclick="delFolderModal('${f.id}')">Delete</button>
+</div>`).join('');
+}
+
+function addFolder() {
+  const nm = document.getElementById('nf-name')?.value.trim();
+  if (!nm) { toast('Enter a folder name', 'err'); return; }
+  if (S.folders.find(f => f.uid===S.cur.id && f.name.toLowerCase()===nm.toLowerCase())) { toast('Folder already exists','err'); return; }
+  S.folders.push({ id:uid(), uid:S.cur.id, name:nm });
+  sv(); toast('Folder created!','ok'); renderSbFolders(); renderSet();
+}
+
+function promptAddFolder() { go('set'); setTimeout(() => document.getElementById('nf-name')?.focus(), 200); }
+
+function renameFolderModal(fid) {
+  const f = S.folders.find(x => x.id === fid);
+  showModal(`
+<div class="mh"><h3>Rename folder</h3><button class="mc" onclick="closeModal()">✕</button></div>
+<div class="mf"><label>Folder name</label><input id="rf-nm" type="text" value="${esc(f.name)}"></div>
+<div class="mbr">
+  <button class="btn-sec" onclick="closeModal()">Cancel</button>
+  <button class="btn-pri" onclick="confirmRename('${fid}')">Rename</button>
+</div>`);
+}
+
+function confirmRename(fid) {
+  const f = S.folders.find(x => x.id === fid);
+  if (!f) return;
+  const nm = document.getElementById('rf-nm')?.value.trim();
+  if (!nm) { toast('Enter a name','err'); return; }
+  f.name = nm; sv(); closeModal(); toast('Folder renamed','ok');
+  renderSbFolders(); renderSet();
+}
+
+function delFolderModal(fid) {
+  const f = S.folders.find(x => x.id === fid);
+  const cnt = S.bookmarks.filter(b => b.fid === fid).length;
+  showModal(`
+<div class="mh"><h3>Delete folder?</h3><button class="mc" onclick="closeModal()">✕</button></div>
+<p style="color:var(--txt2);font-size:13.5px;line-height:1.6">Delete <strong>${esc(f?.name||'')}</strong>?${cnt>0?' The '+cnt+' bookmark'+(cnt>1?'s':'')+' inside will become uncategorized.':' The folder is empty.'}</p>
+<div class="mbr">
+  <button class="btn-sec" onclick="closeModal()">Cancel</button>
+  <button class="btn-danger" onclick="confirmDelFolder('${fid}')">Delete folder</button>
+</div>`);
+}
+
+function confirmDelFolder(fid) {
+  S.folders = S.folders.filter(x => x.id !== fid);
+  S.bookmarks.forEach(b => { if (b.fid === fid) b.fid = ''; });
+  sv(); closeModal(); toast('Folder deleted','ok');
+  renderSbFolders(); renderSet();
+}
+
+/* ─── CHANGE PASSWORD ─── */
+function changePwModal() {
+  showModal(`
+<div class="mh"><h3>Change password</h3><button class="mc" onclick="closeModal()">✕</button></div>
+<div class="mf"><label>Current password</label><input id="cp-cur" type="password" placeholder="••••••••"></div>
+<div class="mf"><label>New password</label><input id="cp-new" type="password" placeholder="Min 6 characters"></div>
+<div class="mf"><label>Confirm new password</label><input id="cp-cnf" type="password" placeholder="Repeat password"></div>
+<div class="mbr">
+  <button class="btn-sec" onclick="closeModal()">Cancel</button>
+  <button class="btn-pri" onclick="confirmChangePw()">Update password</button>
+</div>`);
+}
+
+function confirmChangePw() {
+  const cur = document.getElementById('cp-cur').value;
+  const nw  = document.getElementById('cp-new').value;
+  const cnf = document.getElementById('cp-cnf').value;
+  if (cur !== S.cur.password) { toast('Current password incorrect','err'); return; }
+  if (nw.length < 6)          { toast('Password must be at least 6 characters','err'); return; }
+  if (nw !== cnf)             { toast('Passwords do not match','err'); return; }
+  S.cur.password = nw;
+  const u = S.users.find(x => x.id === S.cur.id);
+  if (u) u.password = nw;
+  sv(); closeModal(); toast('Password updated!','ok');
+}
+
+/* ─── DELETE ACCOUNT ─── */
+function delAccModal() {
+  showModal(`
+<div class="mh"><h3>Delete account?</h3><button class="mc" onclick="closeModal()">✕</button></div>
+<p style="color:var(--txt2);font-size:13.5px;line-height:1.6;margin-bottom:6px">This will permanently delete your account, all <strong>${ud().bms.length}</strong> bookmarks, and all folders. This cannot be undone.</p>
+<div class="mf"><label>Type "DELETE" to confirm</label><input id="del-confirm" type="text" placeholder="DELETE"></div>
+<div class="mbr">
+  <button class="btn-sec" onclick="closeModal()">Cancel</button>
+  <button class="btn-danger" onclick="confirmDelAcc()">Delete everything</button>
+</div>`);
+}
+
+function confirmDelAcc() {
+  if (document.getElementById('del-confirm')?.value !== 'DELETE') { toast('Type DELETE to confirm','err'); return; }
+  const id = S.cur.id;
+  S.users     = S.users.filter(x => x.id !== id);
+  S.bookmarks = S.bookmarks.filter(x => x.uid !== id);
+  S.folders   = S.folders.filter(x => x.uid !== id);
+  S.cur = null; sv(); closeModal();
+  document.getElementById('wrap').style.display = 'none';
+  document.getElementById('auth').style.display = 'flex';
+}
+
+/* ─── EXPORT / IMPORT ─── */
+function exportData() {
+  const { bms, flds } = ud();
+  const data = { version:1, exported: new Date().toISOString(), bookmarks: bms, folders: flds };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'folia-export.json'; a.click();
+  toast('Bookmarks exported!','ok');
+}
+
+function importData() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = async e => {
+    try {
+      const text = await e.target.files[0].text();
+      const data = JSON.parse(text);
+      let added = 0;
+      if (data.bookmarks) {
+        data.bookmarks.forEach(b => {
+          if (!S.bookmarks.find(x => x.url === b.url && x.uid === S.cur.id)) {
+            S.bookmarks.push({ ...b, id:uid(), uid:S.cur.id }); added++;
+          }
+        });
+      }
+      if (data.folders) {
+        data.folders.forEach(f => {
+          if (!S.folders.find(x => x.name === f.name && x.uid === S.cur.id)) {
+            S.folders.push({ ...f, id:uid(), uid:S.cur.id });
+          }
+        });
+      }
+      sv(); renderSbFolders(); updLibCnt(); renderSet();
+      toast(`Imported ${added} bookmarks!`,'ok');
+    } catch { toast('Invalid file format','err'); }
+  };
+  inp.click();
+}
+
+/* ─── MODAL ─── */
+function showModal(html) {
+  document.getElementById('modal-root').innerHTML = `<div class="modal-bg" onclick="maybeClose(event)"><div class="modal">${html}</div></div>`;
+}
+function maybeClose(e) { if (e.target.classList.contains('modal-bg')) closeModal(); }
+function closeModal()  { document.getElementById('modal-root').innerHTML = ''; }
+
+/* ─── TOAST ─── */
+let toastTmr;
+function toast(msg, type='ok') {
+  clearTimeout(toastTmr);
+  const icons = {
+    ok:   `<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
+    err:  `<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`,
+    warn: `<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+  };
+  document.getElementById('toast-root').innerHTML = `<div class="toast ${type}">${icons[type]||icons.ok}${msg}</div>`;
+  toastTmr = setTimeout(() => document.getElementById('toast-root').innerHTML = '', 3500);
+}
+
+/* ─── GLOBAL EVENT LISTENERS ─── */
+document.addEventListener('click', e => {
+  if (window.innerWidth <= 700) {
+    const sb  = document.getElementById('sb');
+    const tog = document.getElementById('tog');
+    if (sb && !sb.contains(e.target) && !tog.contains(e.target) && sb.classList.contains('open')) {
+      sb.classList.remove('open');
+      tog.classList.remove('sb-open-tog');
+    }
+  }
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); document.getElementById('g-srch')?.focus(); }
+});
+</script>
+</body>
+</html>
