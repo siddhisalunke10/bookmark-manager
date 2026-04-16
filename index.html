@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Digital Journal</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #fdfaf0; }
+        .container { max-width: 400px; margin: auto; display: flex; flex-direction: column; gap: 10px; }
+        input, textarea { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px; background: #24b47e; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>New Journal Entry</h2>
+        <input type="text" id="title" placeholder="Enter Title...">
+        <textarea id="content" rows="5" placeholder="Write your thoughts..."></textarea>
+        <button onclick="saveToSupabase()">Save to Supabase</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        // PASTE YOUR ACTUAL DETAILS BELOW
+        const _url = 'https://wzguogbwmzzmjgtriape.supabase.co';
+        const _key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind6Z3VvZ2J3bXp6bWpndHJpYXBlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMjAxNDEsImV4cCI6MjA5MTg5NjE0MX0.Q9nWnfi23es-YU7d4YSFNTuIluhtl_RA-BTSH8BGXPw';
+
+        const supabaseClient = supabase.createClient(_url, _key);
+
+        async function saveToSupabase() {
+            const title = document.getElementById('title').value;
+            const content = document.getElementById('content').value;
+
+            const { data, error } = await supabaseClient
+                .from('entries') // This must match your SQL table name
+                .insert([{ title: title, content: content }]);
+
+            if (error) {
+                alert('Error: ' + error.message);
+                console.error(error);
+            } else {
+                alert('Saved successfully!');
+                document.getElementById('title').value = '';
+                document.getElementById('content').value = '';
+            }
+        }
+    </script>
+</body>
+</html>
